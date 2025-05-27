@@ -1,0 +1,5 @@
+transformers
+accelerate
+qwen-vl-utils
+'vllm>0.8.1'
+'bitsandbytes>=0.45.0'
