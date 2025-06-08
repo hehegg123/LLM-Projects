@@ -9,9 +9,8 @@ import os
 os.environ["LANGCHAIN_TRACING_V2"] = "True"
 os.environ["LANGCHAIN_PROJECT"] = "LangchainDemo"
 
-model = ChatGoogleGenerativeAI(model='gemini-1.5-flash')
+model = ChatGoogleGenerativeAI(model='gemini-2.5-flash-preview-05-20')
 
-# --- CORRECTED PROMPT TEMPLATE ---
 # Use two MessagesPlaceholder: one for 'chat_history' and one for the 'my_msg' (current input)
 prompt_template = ChatPromptTemplate.from_messages([  # defines the structured input given to the LLM
     SystemMessage(content='you are a helpful bot, always answer question in {language}'),
