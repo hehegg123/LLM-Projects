@@ -109,3 +109,10 @@ response2 = result_chain.invoke(
     {'configurable': {'session_id': 'hehegg123'}}
 )
 print(response2['answer'])
+
+#test 3
+response3 = result_chain.invoke(
+    {'input': "what is RL agents?"},
+    {'configurable': {'session_id': 'hehegg123'}}
+)
+print(response3['answer'])
