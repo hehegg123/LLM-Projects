@@ -3,25 +3,13 @@
 # 2, execute SQL search
 # 3. Use model to respond to user
 
-from langchain.chains.combine_documents import create_stuff_documents_chain
-from langchain.chains.history_aware_retriever import create_history_aware_retriever
 from langchain.chains.sql_database.query import create_sql_query_chain
-from langchain_community.document_loaders import WebBaseLoader
 from langchain_community.tools import QuerySQLDatabaseTool
-from langchain_core.runnables import RunnableWithMessageHistory, RunnablePassthrough
+from langchain_core.output_parsers import StrOutputParser
+from langchain_core.runnables import RunnablePassthrough,RunnableLambda
 from langchain_google_genai import ChatGoogleGenerativeAI
-from langchain_text_splitters import RecursiveCharacterTextSplitter
-from langchain.chains.retrieval import create_retrieval_chain
-import bs4
 from operator import itemgetter
-from langchain_community.chat_message_histories import ChatMessageHistory
-from langchain_community.tools.tavily_search import TavilySearchResults
-from langchain_core.messages import HumanMessage, SystemMessage
 import os
-from langchain_core.vectorstores import VectorStore
-from langchain_chroma import Chroma
-from langchain_google_genai import GoogleGenerativeAIEmbeddings
-from langgraph.prebuilt import chat_agent_executor
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_community.utilities import SQLDatabase
 
@@ -46,12 +34,20 @@ db= SQLDatabase.from_uri(MYSQL_URI)
 print(db.get_usable_table_names())
 
 # directly pull answers from SQL using LLM Model
-test_chain = create_sql_query_chain(model,db)
+test_chain = create_sql_query_chain(model, db)
 response = test_chain.invoke({'question': 'how many rows are there in the actor table?'})
 print(response)
 
+# strip the SQLQuery part of the function
+def strip_sql_prefix(sql_query_with_prefix: str) -> str:
+    if sql_query_with_prefix.startswith("SQLQuery: "):
+        return sql_query_with_prefix[len("SQLQuery: "):].strip()
+    return sql_query_with_prefix.strip()
+
+strip_prefix_runnable = RunnableLambda(strip_sql_prefix)
+
 answer_prompt = ChatPromptTemplate.from_template(
-    """given the following SQL database, SQL command and the user question, provide the answer to the question:
+    """given the following SQL database, SQL command and the user question, provide the full sentence answer to the question:
     Question: {question}
     SQL Query:{query}
     SQL Result:{result}
@@ -59,6 +55,14 @@ answer_prompt = ChatPromptTemplate.from_template(
     """
 )
 # establish the tool to execute sql command
-execute_sql_tool = QuerySQLDatabaseTool(db)
+execute_sql_tool = QuerySQLDatabaseTool(db=db)
 
-chain = (RunnablePassthrough.assign(query = test_chain).assign(result=itemgetter('query')))
+# create chain to generate SQL query and execute SQL query
+chain = (RunnablePassthrough.assign(query = test_chain | strip_prefix_runnable).assign(result = itemgetter('query') | execute_sql_tool)
+        | answer_prompt
+        | model
+        | StrOutputParser()
+         )
+
+response1 = chain.invoke(input = {'question': 'how many rows are there in the actor table?'})
+print(response1)
