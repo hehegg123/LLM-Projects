@@ -9,6 +9,7 @@ from langchain_core.documents import Document
 from langchain_google_genai import GoogleGenerativeAIEmbeddings
 from langchain_core.runnables import RunnableLambda
 from langchain_core.runnables import RunnablePassthrough
+
 import os
 
 
