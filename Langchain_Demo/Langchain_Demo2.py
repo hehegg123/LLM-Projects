@@ -30,7 +30,6 @@ def get_session_history(session_id:str):
         store[session_id] = ChatMessageHistory()
     return store[session_id]
 
-# --- CORRECTED RunnableWithMessageHistory ---
 # Explicitly define history_messages_key to link it to the 'chat_history' placeholder in the prompt
 do_message = RunnableWithMessageHistory(
     Chain,
