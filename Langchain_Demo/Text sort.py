@@ -16,3 +16,19 @@ class Classification(BaseModel):
     sentiment: str = Field (description = 'sentiment of text')
     aggressiveness: int = Field(description="describe the aggressiveness of the text from 1 - 10")
     language: str = Field(description="the language used by the text")
+
+
+tagging_prompt = ChatPromptTemplate.from_template(
+    """
+    extract the following information from the paragraph.
+    only extract attributes mentioned in 'Classification'.
+    paragraph: {input}
+    """
+)
+
+chain = tagging_prompt | model.with_structured_output(Classification)
+
+input_text = 'The professor at my school is horrible, I am furious about what he has done.'
+
+result: Classification = chain.invoke({'input': input_text})
+print(result)
